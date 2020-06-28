@@ -1,0 +1,131 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <meta name="description" content="This is a Choloreth Map" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Choropleth Map</title>
+    <!--CSS page-->
+    <link rel="stylesheet" type="text/css" href="./css/Style.css">
+    <!--D3 library-->
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <!--jQuery Library-->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+    <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
+    <script src="https://unpkg.com/topojson@3"></script>
+
+</head>
+<body>
+    <script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
+    <div id="title">United States Educational Attainment</div>
+    <div id="description">Percentage of adults age 25 and older with a bachelor's degree or higher (2010-2014)</div>
+    <script>
+        // Fetch data 
+        var educationData, countyData; 
+        const urlEducation = 'https://cdn.freecodecamp.org/testable-projects-fcc/data/choropleth_map/for_user_education.json';
+        const urlCounty = 'https://cdn.freecodecamp.org/testable-projects-fcc/data/choropleth_map/counties.json';
+        const firstReq = new XMLHttpRequest(); // Create first request 
+        firstReq.open("GET", urlEducation, true); 
+        firstReq.send(); 
+        firstReq.onload = () => {
+            educationData = JSON.parse(firstReq.responseText);
+            secondReq = new XMLHttpRequest(); // Create a second request 
+            secondReq.open("GET", urlCounty, true);
+            secondReq.send(); 
+            secondReq.onload = () => {
+                countyData = JSON.parse(secondReq.responseText); 
+                //Create scg canvas
+                const width  = 1000; 
+                const height = 600; 
+                const svg = d3.select("body")
+                    .append("svg")
+                    .attr("width", width + "px")
+                    .attr("height", height + "px")
+                    .attr("class", "svg-container")
+
+                //Tooltip
+                var tooltip = d3.select("body")
+                    .append("div")
+                    .attr("class", "tooltip")
+                    .attr("id", "tooltip")
+                    .style("opacity", 0);
+
+                //Create a legend 
+                var colors  = ['rgb(196, 237, 183)', 'rgb(169, 217, 154)', 'rgb(146, 199, 129)', 'rgb(121, 173, 104)', 'rgb(104, 161, 85)', 'rgb(86, 143, 67)', 'rgb(68, 128, 48)', 'rgb(41, 99, 22)'];
+                const legendX = (width / 2) - 175;
+                const legendY = 20;
+                const dx = 28; 
+                const legend = svg.append("g")
+                    .attr("id", "legend");
+
+                legend.selectAll("rect")
+                    .data(colors)
+                    .enter()
+                    .append("rect")
+                    .attr("x", (d, i) => legendX + i * dx)
+                    .attr("y", legendY)
+                    .attr("width", dx)
+                    .attr("height", legendY)
+                    .attr("fill", d => d);
+    
+                //Create a color scale 
+                educationArrData = educationData.map(item => item.bachelorsOrHigher);
+                var colorScale = d3.scaleLinear()
+                    .domain([d3.min(educationArrData), d3.max(educationArrData)])
+                    .range([0, 7]);
+
+                var path = d3.geoPath(); // Takes in a GeoJSON object and generates a path 
+                var dataset = topojson.feature(countyData, countyData.objects.counties).features;
+                // Display data 
+                svg.append("g")
+                    .attr("class", "counties")
+                    .selectAll("path")
+                    .data(dataset)
+                    .enter()
+                    .append("path")
+                    .attr("class", "county")
+                    .attr("data-fips", d => d.id)
+                    .attr("data-education", d=>{
+                        return educationData.filter(item => item.fips == d.id)[0].bachelorsOrHigher;
+                    })
+                    .attr("d", path)
+                    .attr("fill", d => {
+                        let idx = Math.floor(colorScale(educationData.filter(item => item.fips == d.id)[0].bachelorsOrHigher)); 
+                        return colors[idx];
+                    })
+                    .on("mouseover", d=>{
+                        tooltip.style("opacity", .9);
+                        tooltip.html(()=>{
+                            var result = educationData.filter(obj=>obj.fips == d.id);
+                            if (result[0]) {
+                                return result[0]['area_name'] + ', ' + result[0]['state'] + ': ' + result[0].bachelorsOrHigher + '%'
+                            }
+                            //could not find a matching fips id in the data
+                            return 0
+                        })
+                            .attr("data-education", function () {
+                                var result = educationData.filter(obj=>obj.fips == d.id);
+                                if (result[0]) {
+                                    return result[0].bachelorsOrHigher
+                                }
+                                //could not find a matching fips id in the data
+                                return 0
+                            })
+                            .style("left", (d3.event.pageX + 10) + "px")
+                            .style("top", (d3.event.pageY - 28) + "px");
+                    })
+                    .on("mouseout", function (d) {
+                        tooltip.style("opacity", 0);
+                    });
+
+                    
+                    
+
+                
+            }
+        }
+    </script>
+</body>
+</html>

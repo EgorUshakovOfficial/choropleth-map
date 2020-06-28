@@ -1,0 +1,30 @@
+﻿#title{
+    font-size: 3rem; 
+    text-align: center;
+}
+
+.svg-container{
+    display: block;
+    margin: auto;
+}
+#description{
+    font-size: 1.5rem;
+    text-align: center;
+    
+}
+
+
+#tooltip {
+    position: absolute;
+    padding: 10px;
+    font: 12px Arial;
+    background: rgba(255, 255, 204, 0.9);
+    box-shadow: 1px 1px 10px rgba(128, 128, 128, 0.6);
+    border: 0px;
+    border-radius: 2px;
+    pointer-events: none;
+}
+
+#legend{
+    border: 3px solid black;
+}
